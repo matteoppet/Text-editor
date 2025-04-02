@@ -20,20 +20,21 @@ void PieceTable::updatePieces(const char char_to_insert, size_t position_to_inse
     // * case 1: split pieces
     if (offset < position_to_insert && offset+piece->length > position_to_insert) {
       size_t local_offset = position_to_insert-offset;
+      
 
-      Piece* first_part_piece = new Piece({piece->fromAddBuffer, &addBuffer, piece->start, local_offset});
+      Piece* first_part_piece = new Piece({piece->fromAddBuffer, piece->buffer, piece->start, local_offset});
       new_pieces.push_back(first_part_piece);
 
       Piece* new_part_piece = new Piece({true, &addBuffer, addBuffer.length()-1, 1});
       new_pieces.push_back(new_part_piece);
 
-      Piece* last_part_piece = new Piece({piece->fromAddBuffer, &addBuffer, piece->start+local_offset, piece->length-local_offset});
+      Piece* last_part_piece = new Piece({piece->fromAddBuffer, piece->buffer, piece->start+local_offset, piece->length-local_offset});
       new_pieces.push_back(last_part_piece);
     }
     // * case 2: increase length one piece
     else if (offset+piece->length == position_to_insert) {
       std::string substring = piece->buffer->substr(piece->start, piece->length);
-      
+
       // insert new piece if the cursor was moved or the piece to increase is not from the addBuffer
       if (insert_new_piece || !piece->fromAddBuffer || substring.compare("\n") == 0) {
         new_pieces.push_back(piece);
@@ -207,4 +208,52 @@ std::pair<int, int> PieceTable::findNewCursorPos(int action, int cursor_col, int
   }
 
   return {0,0};
+}
+
+void PieceTable::readDroppedFile(std::string file_path, Cursor& cursor) {
+  reset();
+  cursor.reset();
+
+  // open file for reading
+  std::string new_text;
+  std::ifstream FileToRead(file_path);
+
+  // append the text that is inside the file into the originalBuffer
+  while (getline(FileToRead, new_text)) {
+    originalBuffer += new_text;
+    originalBuffer += "\n";
+  }
+
+  // create pieces from the originalBuffer string
+  size_t offset_start = 0;
+  size_t count_length_piece = 0;
+  size_t lines = 0;
+  for (int i=0; i<originalBuffer.length(); i++) {
+    if (originalBuffer[i] == '\n') {
+      count_length_piece++;
+
+      size_rows[lines] = count_length_piece-1;
+      lines++;
+
+      Piece* text_piece = new Piece({false, &originalBuffer, offset_start, count_length_piece-1}); 
+      pieces.push_back(text_piece);
+
+      offset_start += count_length_piece;
+      count_length_piece = 0;
+      
+      Piece* new_line_piece = new Piece({false, &originalBuffer, offset_start-1, 1});
+      pieces.push_back(new_line_piece);
+
+    } else {
+      count_length_piece++;
+    }
+  }
+
+} 
+
+void PieceTable::reset() {
+  originalBuffer.clear();
+  addBuffer.clear();
+  pieces.clear();
+  size_rows.clear();
 }

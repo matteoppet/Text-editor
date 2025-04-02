@@ -5,8 +5,10 @@
 #include <string>
 #include <algorithm>
 #include <bits/stdc++.h>
+#include <fstream>
 
 #include "../font/font.h"
+#include "../cursor/cursor.h"
 
 struct Piece {
   bool fromAddBuffer;
@@ -34,4 +36,6 @@ class PieceTable {
     int getTotalRows();
     
     std::pair<int, int> findNewCursorPos(int action, int cursor_col, int cursor_row);
+    void readDroppedFile(std::string file_path, Cursor& cursor);
+    void reset(); 
 };

@@ -12,4 +12,5 @@ class Cursor {
     int current_pos = 0;
 
     void render();
+    void reset();
 };

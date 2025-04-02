@@ -8,3 +8,9 @@ void Cursor::render() {
 
   DrawLine(start_x, start_y, end_x, end_y, RED);
 }
+
+void Cursor::reset() {
+  current_row = 0;
+  current_col = 0;
+  current_pos = 0;
+}

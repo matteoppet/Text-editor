@@ -3,6 +3,7 @@
 #include "text/piece_table.h"
 #include "font/font.h"
 #include "cursor/cursor.h"
+#include "utils/utils.h"
 
 void runMainLoop();
 void initRaylibWindow();
@@ -17,7 +18,7 @@ int main() {
 void runMainLoop() {
   // Init classes
   Cursor cursor;
-
+  Utils utils;
   PieceTable text_storage;
   std::string empty_string;
   text_storage.updateOriginalBuffer(empty_string);
@@ -25,6 +26,7 @@ void runMainLoop() {
   char pressed_char;
   int keys;
   bool cursor_moved = false;
+  bool drag_and_drop_view = false;
 
   while (!WindowShouldClose()) {
     pressed_char = GetCharPressed();
@@ -69,7 +71,6 @@ void runMainLoop() {
         text_storage.deleteChar(cursor.current_pos);
         text_storage.updateRowSize(-1, cursor.current_row, cursor.current_col);
       } else if (keys == KEY_ENTER) {
-        // TODO: new row
         text_storage.insertNewRow(cursor.current_pos);
         cursor.current_col = 0;
         cursor.current_row += 1;
@@ -77,7 +78,9 @@ void runMainLoop() {
         text_storage.updateRowSize(0, cursor.current_row, cursor.current_col);
       }
     }
-      
+
+    utils.handleInteractions(text_storage, cursor);
+
     BeginDrawing();
       ClearBackground(RAYWHITE);
       text_storage.renderPieces();
