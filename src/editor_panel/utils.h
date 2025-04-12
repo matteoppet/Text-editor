@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include "../text_area/piece_table.h"
+#include "../text_area/text_area.h"
 #include "../text_area/cursor.h"
 #include "raylib.h"
 #include "tinyfiledialogs.h"

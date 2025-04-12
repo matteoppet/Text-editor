@@ -1,4 +1,4 @@
-#include "piece_table.h"
+#include "text_area.h"
 
 void PieceTable::updateOriginalBuffer(const std::string& text) {
   if (!text.empty()) {
@@ -62,7 +62,7 @@ void PieceTable::updatePieces(const char char_to_insert, size_t position_to_inse
   pieces = std::move(new_pieces);
 }
 
-void PieceTable::deleteChar(size_t position_to_delete, size_t cursor_col) { // TODO: don't do the loop each time a backspace key is pressed to decrease length piece
+void PieceTable::deleteChar(size_t position_to_delete, size_t cursor_col) {
    size_t cursor_pos_before_deletion = position_to_delete+1;
   size_t offset = 0;
   std::vector<Piece*> new_pieces;
@@ -102,29 +102,6 @@ void PieceTable::deleteChar(size_t position_to_delete, size_t cursor_col) { // T
   }
 
   pieces = std::move(new_pieces);
-}
-
-void PieceTable::render(Cursor& cursor) {
-  float start_x = 5;
-  float start_y = 25;
-  float length_current_word = 0;
-  FontClass& instance_font_class = FontClass::getInstance();
-
-  cursor.render(start_x, start_y);
-  
-  // draw pieces
-  for (const auto& piece : pieces) {
-    std::string substring = piece->buffer->substr(piece->start, piece->length);
-
-    if (substring.compare("\n") == 0) {
-      start_y += 18;
-      start_x = 5;
-    } else {
-      length_current_word = instance_font_class.measure_size_char(substring[0]).x*substring.length();
-      DrawTextEx(instance_font_class.FONT_TYPE, substring.c_str(), {start_x, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
-      start_x += length_current_word;
-    }
-  }
 }
 
 void PieceTable::insertNewRow(size_t cursor_pos) {
@@ -167,6 +144,33 @@ void PieceTable::insertNewRow(size_t cursor_pos) {
   }
 
   pieces= std::move(new_pieces);
+}
+
+void PieceTable::render(Cursor& cursor) {
+  float start_x = 5;
+  float start_y = 25;
+  float length_current_word = 0;
+  FontClass& instance_font_class = FontClass::getInstance();
+
+  cursor.render(start_x, start_y);
+
+  if (text_selected.selected) {
+    std::cout << text_selected.selected_row << "," << text_selected.selected_col << std::endl;
+  }
+  
+  // draw pieces
+  for (const auto& piece : pieces) {
+    std::string substring = piece->buffer->substr(piece->start, piece->length);
+
+    if (substring.compare("\n") == 0) {
+      start_y += 18;
+      start_x = 5; 
+    } else {
+      length_current_word = instance_font_class.measure_size_char(substring[0]).x*substring.length();
+      DrawTextEx(instance_font_class.FONT_TYPE, substring.c_str(), {start_x, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
+      start_x += length_current_word;
+    }
+  }
 }
  
 void PieceTable::updateRowSize(int action, int cursor_row, int cursor_col) {
@@ -384,6 +388,29 @@ void PieceTable::redo(Cursor& cursor) {
     cursor.cursor_moved = true;
     redo_stack.pop_back();
   }
+}
+
+void PieceTable::selectText(Cursor& cursor, size_t start_selection_row, size_t start_selection_col) {
+  if (text_selected.selected) {
+    text_selected.selected_col = cursor.current_col;
+    text_selected.selected_row = cursor.current_row;
+  } else {
+    text_selected.selected = true;
+    text_selected.selected_col = cursor.current_col;
+    text_selected.selected_row = cursor.current_row;
+    text_selected.start_selection_col = start_selection_col;
+    text_selected.start_selection_row = start_selection_row;
+  }
+}
+
+void PieceTable::unselectText(Cursor& cursor) {
+  text_selected.selected = false;
+  text_selected.selected_col = 0;
+  text_selected.selected_row = 0;
+
+  cursor.current_col = text_selected.start_selection_col;
+  cursor.current_row = text_selected.start_selection_row;
+  cursor.current_pos = findNewCursorPos(0, cursor.current_col, cursor.current_row).first;
 }
 
 void PieceTable::freeMemory() {

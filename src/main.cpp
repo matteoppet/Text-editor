@@ -1,6 +1,6 @@
 #include "raylib.h"
 
-#include "text_area/piece_table.h"
+#include "text_area/text_area.h"
 #include "font/font.h"
 #include "text_area/cursor.h"
 #include "editor_panel/utils.h"
@@ -25,12 +25,12 @@ void runMainLoop() {
 
   char pressed_char;
   int keys;
-  bool drag_and_drop_view = false;
 
   while (!WindowShouldClose()) {
     pressed_char = GetCharPressed();
 
     if (pressed_char) {
+      if (text_area.text_selected.selected) text_area.unselectText(cursor);
       text_area.updatePieces(pressed_char, cursor.current_pos, cursor.cursor_moved, cursor.current_col);
       cursor.current_col++;
       cursor.current_pos++;
@@ -40,9 +40,23 @@ void runMainLoop() {
     keys = GetKeyPressed();
     if (keys) {
       cursor.cursor_moved = false;
-
-      // * move cursor
-      if (keys == KEY_LEFT && cursor.current_col > 0) {
+      
+      // * select text
+      if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_LEFT) && cursor.current_col > 0) {
+        cursor.current_col -= 1;
+        text_area.selectText(cursor, cursor.current_row, cursor.current_col+1);
+      } else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_RIGHT) && cursor.current_col < text_area.getRowSize(cursor.current_row)) {
+        cursor.current_col += 1;
+        text_area.selectText(cursor, cursor.current_row, cursor.current_col-1);
+      } else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_UP) && cursor.current_row > 0) {
+        cursor.current_row -= 1;
+        text_area.selectText(cursor, cursor.current_row+1, cursor.current_col);
+      } else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_DOWN) && cursor.current_row < text_area.getTotalRows()) {
+        cursor.current_row += 1;
+        text_area.selectText(cursor, cursor.current_row-1, cursor.current_col);
+      }
+      // * move cursorr
+      else if (keys == KEY_LEFT && cursor.current_col > 0) {
         cursor.current_col -= 1;
         cursor.current_pos -= 1;
         cursor.cursor_moved = true;
@@ -51,12 +65,10 @@ void runMainLoop() {
         cursor.current_pos += 1;
         cursor.cursor_moved = true;
       } else if (keys == KEY_UP && cursor.current_row > 0) {
-        // TODO:
         std::tie(cursor.current_pos, cursor.current_col) = text_area.findNewCursorPos(-1, cursor.current_col, cursor.current_row);
         cursor.current_row -= 1;
         cursor.cursor_moved = true;
       } else if (keys == KEY_DOWN && cursor.current_row < text_area.getTotalRows()-1) {
-        // TODO: 
         std::tie(cursor.current_pos, cursor.current_col) = text_area.findNewCursorPos(+1, cursor.current_col, cursor.current_row);
         cursor.current_row += 1;
         cursor.cursor_moved = true;
@@ -82,7 +94,6 @@ void runMainLoop() {
    
     BeginDrawing();
       ClearBackground(RAYWHITE);
-
 
       text_area.render(cursor);
       editor_panel.renderToolPanel();

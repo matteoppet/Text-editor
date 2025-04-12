@@ -31,6 +31,15 @@ struct Piece {
     length(length) {}
 };
 
+struct TextSelectedInfo {
+  bool selected = false; 
+  size_t selected_row = 0;
+  size_t selected_col = 0;
+  
+  size_t start_selection_col = 0;
+  size_t start_selection_row = 0;
+};
+
 struct ActionRecordUndo {
   ActionType type;
 
@@ -79,13 +88,16 @@ class PieceTable {
 
     std::vector<ActionRecordUndo*> undo_stack;
     std::vector<ActionRecordRedo*> redo_stack;
- 
+    
   public:
+    TextSelectedInfo text_selected;
+
     void updateOriginalBuffer(const std::string& text);
     void updatePieces(const char char_to_insert, size_t position_to_insert, bool insert_new_piece, size_t cursor_col);
     void deleteChar(size_t position_to_delete, size_t cursor_col);
-    void render(Cursor& cursor);
     void insertNewRow(size_t cursor_pos);
+
+    void render(Cursor& cursor);
 
     void updateRowSize(int action, int cursor_row, int cursor_col);
     int getRowSize(int row);
@@ -98,6 +110,9 @@ class PieceTable {
 
     void undo(Cursor& cursor);
     void redo(Cursor& cursor);
+
+    void selectText(Cursor& cursor, size_t start_selection_row, size_t start_selection_col);
+    void unselectText(Cursor& cursor);
 
     void freeMemory();
 };
