@@ -33,11 +33,8 @@ struct Piece {
 
 struct TextSelectedInfo {
   bool selected = false; 
-  size_t selected_row = 0;
-  size_t selected_col = 0;
-  
-  size_t start_selection_col = 0;
-  size_t start_selection_row = 0;
+  Vector2 anchor_point;
+  Vector2 active_point;
 };
 
 struct ActionRecordUndo {
@@ -111,7 +108,7 @@ class PieceTable {
     void undo(Cursor& cursor);
     void redo(Cursor& cursor);
 
-    void selectText(Cursor& cursor, size_t start_selection_row, size_t start_selection_col);
+    void selectText(Cursor& cursor, std::string direction);
     void unselectText(Cursor& cursor);
 
     void freeMemory();

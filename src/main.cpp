@@ -44,31 +44,39 @@ void runMainLoop() {
       // * select text
       if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_LEFT) && cursor.current_col > 0) {
         cursor.current_col -= 1;
-        text_area.selectText(cursor, cursor.current_row, cursor.current_col+1);
+        cursor.current_pos -= 1;
+        text_area.selectText(cursor, "left");
       } else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_RIGHT) && cursor.current_col < text_area.getRowSize(cursor.current_row)) {
         cursor.current_col += 1;
-        text_area.selectText(cursor, cursor.current_row, cursor.current_col-1);
-      } else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_UP) && cursor.current_row > 0) {
+        cursor.current_pos -= 1;
+        text_area.selectText(cursor, "right");
+      } else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_UP) && cursor.current_row > 0 && cursor.current_row > 0) {
+        std::tie(cursor.current_pos, cursor.current_col) = text_area.findNewCursorPos(-1, cursor.current_col, cursor.current_row);
         cursor.current_row -= 1;
-        text_area.selectText(cursor, cursor.current_row+1, cursor.current_col);
-      } else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_DOWN) && cursor.current_row < text_area.getTotalRows()) {
+        text_area.selectText(cursor, "up");
+      } else if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_DOWN) && cursor.current_row < text_area.getTotalRows()-1) {
+        std::tie(cursor.current_pos, cursor.current_col) = text_area.findNewCursorPos(+1, cursor.current_col, cursor.current_row);
         cursor.current_row += 1;
-        text_area.selectText(cursor, cursor.current_row-1, cursor.current_col);
+        text_area.selectText(cursor, "down");
       }
       // * move cursorr
       else if (keys == KEY_LEFT && cursor.current_col > 0) {
+        if (text_area.text_selected.selected) text_area.unselectText(cursor);
         cursor.current_col -= 1;
         cursor.current_pos -= 1;
         cursor.cursor_moved = true;
       } else if (keys == KEY_RIGHT && cursor.current_col < text_area.getRowSize(cursor.current_row)) {
+        if (text_area.text_selected.selected) text_area.unselectText(cursor);
         cursor.current_col += 1;
         cursor.current_pos += 1;
         cursor.cursor_moved = true;
       } else if (keys == KEY_UP && cursor.current_row > 0) {
+        if (text_area.text_selected.selected) text_area.unselectText(cursor);
         std::tie(cursor.current_pos, cursor.current_col) = text_area.findNewCursorPos(-1, cursor.current_col, cursor.current_row);
         cursor.current_row -= 1;
         cursor.cursor_moved = true;
       } else if (keys == KEY_DOWN && cursor.current_row < text_area.getTotalRows()-1) {
+        if (text_area.text_selected.selected) text_area.unselectText(cursor);
         std::tie(cursor.current_pos, cursor.current_col) = text_area.findNewCursorPos(+1, cursor.current_col, cursor.current_row);
         cursor.current_row += 1;
         cursor.cursor_moved = true;

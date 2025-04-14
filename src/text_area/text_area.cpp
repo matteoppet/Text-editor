@@ -155,9 +155,83 @@ void PieceTable::render(Cursor& cursor) {
   cursor.render(start_x, start_y);
 
   if (text_selected.selected) {
-    std::cout << text_selected.selected_row << "," << text_selected.selected_col << std::endl;
+    /* 
+      active point col < anchor point = rectangle from active point to anchor point
+      active point col > anchor point = rectangle from anchor point to active point
+
+      active point row < anchor point row = rectangle from active point to the end of that row to from the start of the anchor point row to the point
+      active point row > anchor point row = rectangle from anchor point to the end of that row to from the start of the anchor point row to the point
+    */
+
+    float pos_x;
+    float pos_y;
+    float width;
+    float height;
+
+    // same row
+    if (text_selected.active_point.y == text_selected.anchor_point.y) {
+      pos_y = start_y+(text_selected.active_point.y*instance_font_class.measure_size_char('a').y);
+      height = instance_font_class.measure_size_char('a').y;
+
+      if (text_selected.active_point.x < text_selected.anchor_point.x) {
+        pos_x = start_x+(text_selected.active_point.x*instance_font_class.measure_size_char('a').x);
+        width = instance_font_class.measure_size_char('a').x*(text_selected.anchor_point.x-text_selected.active_point.x);
+      } else if (text_selected.active_point.x > text_selected.anchor_point.x) {
+        pos_x = start_x+(text_selected.anchor_point.x*instance_font_class.measure_size_char('a').x);
+        width = instance_font_class.measure_size_char('a').x*(text_selected.active_point.x-text_selected.anchor_point.x);
+      }
+
+      DrawRectangle(pos_x, pos_y, width, height, YELLOW);
+    }
+    // different rows
+    else {
+      // row up
+      if (text_selected.active_point.y < text_selected.anchor_point.y) {
+
+        for (int i=text_selected.active_point.y; i<=text_selected.anchor_point.y; i++) {
+          pos_y = start_y+(i*instance_font_class.measure_size_char('a').y);
+          height = instance_font_class.measure_size_char('a').y;
+
+          if (i == text_selected.active_point.y) {
+            pos_x = start_x+(text_selected.active_point.x*instance_font_class.measure_size_char('a').x);
+            width = instance_font_class.measure_size_char('a').x*(getRowSize(text_selected.active_point.y)-text_selected.active_point.x);
+          } else if (i == text_selected.anchor_point.y) {
+            pos_x = start_x;
+            width = instance_font_class.measure_size_char('a').x*text_selected.anchor_point.x;
+          } else {
+            pos_x = start_x;
+            width = instance_font_class.measure_size_char('a').x*getRowSize(i);
+          }
+          
+          Rectangle current_rectangle = {pos_x, pos_y, width, height};
+          DrawRectangleRec(current_rectangle, YELLOW);
+        }
+      }
+      // row down
+      else if (text_selected.active_point.y > text_selected.anchor_point.y) {
+
+        for (int i=text_selected.anchor_point.y; i<=text_selected.active_point.y; i++) {
+          pos_y = start_y+(i*instance_font_class.measure_size_char('a').y);
+          height = instance_font_class.measure_size_char('a').y;
+          
+          if (i == text_selected.anchor_point.y) {
+            pos_x = start_x+(text_selected.anchor_point.x*instance_font_class.measure_size_char('a').x);
+            width = instance_font_class.measure_size_char('a').x*(getRowSize(text_selected.anchor_point.y)-text_selected.anchor_point.x);
+          } else if (i == text_selected.active_point.y) {
+            pos_x = start_x;
+            width = instance_font_class.measure_size_char('a').x*text_selected.active_point.x;
+          } else {
+            pos_x = start_x;
+            width = instance_font_class.measure_size_char('a').x*getRowSize(i);
+          }
+          
+          Rectangle current_rectangle = {pos_x, pos_y, width, height};
+          DrawRectangleRec(current_rectangle, YELLOW);
+        }
+      }
+    }
   }
-  
+
   // draw pieces
   for (const auto& piece : pieces) {
     std::string substring = piece->buffer->substr(piece->start, piece->length);
@@ -270,7 +344,7 @@ void PieceTable::readDroppedFile(std::string file_path, Cursor& cursor) {
 
 } 
 
-void PieceTable::reset() {
+void PieceTable::reset() { 
   originalBuffer.clear();
   addBuffer.clear();
   pieces.clear();
@@ -390,27 +464,31 @@ void PieceTable::redo(Cursor& cursor) {
   }
 }
 
-void PieceTable::selectText(Cursor& cursor, size_t start_selection_row, size_t start_selection_col) {
-  if (text_selected.selected) {
-    text_selected.selected_col = cursor.current_col;
-    text_selected.selected_row = cursor.current_row;
-  } else {
+void PieceTable::selectText(Cursor& cursor, std::string direction) {
+  if (!text_selected.selected) { // setting up anchor point and active point
     text_selected.selected = true;
-    text_selected.selected_col = cursor.current_col;
-    text_selected.selected_row = cursor.current_row;
-    text_selected.start_selection_col = start_selection_col;
-    text_selected.start_selection_row = start_selection_row;
+
+    if (direction == "left") text_selected.anchor_point = {(float)cursor.current_col+1, (float)cursor.current_row};
+    else if (direction == "right") text_selected.anchor_point = {(float)cursor.current_col-1, (float)cursor.current_row};
+    else if (direction == "up") text_selected.anchor_point = {(float)cursor.current_col, (float)cursor.current_row+1};
+    else if (direction == "down") text_selected.anchor_point = {(float)cursor.current_col, (float)cursor.current_row-1};
+
+    text_selected.active_point = {(float)cursor.current_col, (float)cursor.current_row};
+  } else { // move active point
+    text_selected.active_point = {(float)cursor.current_col, (float)cursor.current_row};
   }
+
+  std::cout << std::endl;
+  std::cout << "anchor point x: " << text_selected.anchor_point.x << ", anchor point y: " << text_selected.anchor_point.y << std::endl;
+  std::cout << "active point x: " << text_selected.active_point.x << ", active point y: " << text_selected.active_point.y << std::endl;
 }
 
 void PieceTable::unselectText(Cursor& cursor) {
-  text_selected.selected = false;
-  text_selected.selected_col = 0;
-  text_selected.selected_row = 0;
-
-  cursor.current_col = text_selected.start_selection_col;
-  cursor.current_row = text_selected.start_selection_row;
+  cursor.current_col = text_selected.anchor_point.x;
+  cursor.current_row = text_selected.anchor_point.y;
   cursor.current_pos = findNewCursorPos(0, cursor.current_col, cursor.current_row).first;
+  
+  text_selected.selected = false;
 }
 
 void PieceTable::freeMemory() {
@@ -422,5 +500,10 @@ void PieceTable::freeMemory() {
   // free undo_stack
   for (auto& action_undo : undo_stack) {
     delete action_undo;
+  }
+
+  // free undo_stack
+  for (auto& action_redo : redo_stack) {
+    delete action_redo;
   }
 }
