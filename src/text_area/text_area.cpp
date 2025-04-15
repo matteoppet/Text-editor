@@ -363,8 +363,6 @@ void PieceTable::saveFile(std::string file_path) {
   }
 
   outFile.close();
-
-  std::cout << "file saved successfully" << std::endl;
 }
 
 void PieceTable::undo(Cursor& cursor) {
@@ -477,10 +475,6 @@ void PieceTable::selectText(Cursor& cursor, std::string direction) {
   } else { // move active point
     text_selected.active_point = {(float)cursor.current_col, (float)cursor.current_row};
   }
-
-  std::cout << std::endl;
-  std::cout << "anchor point x: " << text_selected.anchor_point.x << ", anchor point y: " << text_selected.anchor_point.y << std::endl;
-  std::cout << "active point x: " << text_selected.active_point.x << ", active point y: " << text_selected.active_point.y << std::endl;
 }
 
 void PieceTable::unselectText(Cursor& cursor) {
