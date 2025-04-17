@@ -20,8 +20,6 @@ void runMainLoop() {
   Cursor cursor;
   Utils editor_panel;
   PieceTable text_area;
-  std::string empty_string;
-  text_area.updateOriginalBuffer(empty_string);
 
   while (!WindowShouldClose()) {
     handleKeyboard(cursor, editor_panel, text_area);
@@ -49,17 +47,24 @@ void initRaylibWindow() {
   SetTargetFPS(60);
 }
 
-
 void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) {
   char pressed_char = GetCharPressed();
   int keys = GetKeyPressed();
 
   if (pressed_char) {
-    if (text_area.text_selected.selected) text_area.unselectText(cursor);
+    if (text_area.text_selected.selected) {
+      text_area.deleteFromSelection();
+      cursor.cursor_moved = true;
+      cursor.current_col = text_area.text_selected.active_point.x;
+      cursor.current_row = text_area.text_selected.active_point.y;
+      text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
+      cursor.current_pos = text_area.findNewCursorPos(0, cursor.current_col, cursor.current_row).first;
+      text_area.unselectText(cursor);
+    }
     text_area.updatePieces(pressed_char, cursor.current_pos, cursor.cursor_moved, cursor.current_col);
     cursor.current_col++;
     cursor.current_pos++;
-    text_area.updateRowSize(1, cursor.current_row, cursor.current_col);
+    text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
   }
 
   if (keys) {
@@ -105,12 +110,22 @@ void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) 
         if (text_area.text_selected.selected) text_area.unselectText(cursor);
       }
     }
-    else if (keys == KEY_BACKSPACE && cursor.current_col > 0) {
-      cursor.current_col -= 1;
-      cursor.current_pos -= 1;
-      cursor.cursor_moved = true;
-      text_area.deleteChar(cursor.current_pos, cursor.current_col);
-      text_area.updateRowSize(-1, cursor.current_row, cursor.current_col);
+    else if (keys == KEY_BACKSPACE && cursor.current_col >= 0) {
+      if (text_area.text_selected.selected) {
+        text_area.deleteFromSelection();
+        text_area.unselectText(cursor);
+        cursor.cursor_moved = true;
+        cursor.current_col = text_area.text_selected.active_point.x;
+        cursor.current_row = text_area.text_selected.active_point.y;
+        text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
+        cursor.current_pos = text_area.findNewCursorPos(0, cursor.current_col, cursor.current_row).first;
+      } else {
+        cursor.current_col -= 1;
+        cursor.current_pos -= 1;
+        cursor.cursor_moved = true;
+        text_area.deleteChar(cursor.current_pos, cursor.current_col);
+        text_area.updateRowSize(-1, cursor.current_row, cursor.current_col);
+      }
     }
     else if (keys == KEY_ENTER) {
       text_area.insertNewRow(cursor.current_pos);

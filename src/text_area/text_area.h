@@ -92,6 +92,7 @@ class PieceTable {
     void updateOriginalBuffer(const std::string& text);
     void updatePieces(const char char_to_insert, size_t position_to_insert, bool insert_new_piece, size_t cursor_col);
     void deleteChar(size_t position_to_delete, size_t cursor_col);
+    void deleteFromSelection();
     void insertNewRow(size_t cursor_pos);
 
     void render(Cursor& cursor);
