@@ -561,7 +561,7 @@ void PieceTable::copy(Cursor& cursor) { // TODO
   std::cout << "Copy function" << std::endl;
 }
 
-void PieceTable::paste(Cursor& cursor) { // TODO
+void PieceTable::paste(Cursor& cursor) {
   if (GetClipboardText()) {
     std::string text_to_paste = GetClipboardText();
     size_t length_text_to_paste = text_to_paste.length();
