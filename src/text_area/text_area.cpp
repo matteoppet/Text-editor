@@ -559,6 +559,49 @@ void PieceTable::unselectText(Cursor& cursor) {
 
 void PieceTable::copy(Cursor& cursor) { // TODO
   std::cout << "Copy function" << std::endl;
+  int anchor_point_pos_in_buffer = findNewCursorPos(0, text_selected.anchor_point.x, text_selected.anchor_point.y).first;
+  int active_point_pos_in_buffer = findNewCursorPos(0, text_selected.active_point.x, text_selected.active_point.y).first;
+
+  size_t selection_start = std::min(anchor_point_pos_in_buffer, active_point_pos_in_buffer);
+  size_t selection_end = std::max(anchor_point_pos_in_buffer, active_point_pos_in_buffer);
+  
+  size_t offset = 0;
+  std::string string_copied;
+
+  for (const auto& piece : pieces) {
+    size_t piece_end_offset = offset+piece->length;
+
+    if (offset <= selection_start && piece_end_offset >= selection_end) { // selection inside the piece
+      std::string substring = piece->buffer->substr(piece->start, piece->length);
+      size_t length_to_copy = selection_end - selection_start;
+      size_t start_string_to_copy = selection_start-offset;
+      
+      std::string substring_to_copy = substring.substr(start_string_to_copy, length_to_copy);
+      string_copied += substring_to_copy;
+    }
+    else if (offset <= selection_start && piece_end_offset > selection_start) {// select from the end
+      std::string substring = piece->buffer->substr(piece->start, piece->length);
+      size_t length_to_copy = piece_end_offset - selection_start;
+      
+      std::string substring_to_copy = substring.substr(substring.length()-length_to_copy, length_to_copy);
+      string_copied += substring_to_copy;
+    }
+    else if (offset < selection_end && piece_end_offset >= selection_end) { // select from the start
+      size_t length_to_copy = selection_end - offset;
+      std::string substring = piece->buffer->substr(piece->start, length_to_copy);
+      
+      string_copied += substring;
+
+    }
+    else if (offset > selection_start && piece_end_offset < selection_end) { // copy entirely
+      std::string substring = piece->buffer->substr(piece->start, piece->length);
+      string_copied += substring;
+    }
+
+    offset += piece->length;
+  }
+
+  SetClipboardText(string_copied.c_str());
 }
 
 void PieceTable::paste(Cursor& cursor) {
