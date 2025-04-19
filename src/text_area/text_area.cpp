@@ -10,46 +10,49 @@ void PieceTable::updateOriginalBuffer(const std::string& text) {
   }
 }
 
-void PieceTable::updatePieces(const char char_to_insert, size_t position_to_insert, bool insert_new_piece, size_t cursor_col) {
-  addBuffer += char_to_insert;
+void PieceTable::updatePieces(std::string text_to_insert, size_t position_to_insert, bool insert_new_piece, size_t cursor_col) {
+  size_t length_text = text_to_insert.length();
+  addBuffer.append(text_to_insert);
   redo_stack.clear();
 
   if (pieces.size() == 0) {
-    Piece* new_piece = new Piece({true, &addBuffer, addBuffer.length()-1, 1});
+    Piece* new_piece = new Piece({true, &addBuffer, addBuffer.length()-length_text, length_text});
     pieces.push_back(new_piece);
-  }
+  } 
   else {
     size_t offset = 0;
     std::vector<Piece*> new_pieces;
+    new_pieces.reserve(pieces.size());
 
-    for (auto piece : pieces) {
-      // * case 1: split pieces
+    for (auto& piece : pieces) {
+      // case 1: split pieces
       if (offset < position_to_insert && offset+piece->length > position_to_insert) {
         size_t local_offset = position_to_insert-offset;
-        
+
         Piece* first_part_piece = new Piece({piece->fromAddBuffer, piece->buffer, piece->start, local_offset});
         new_pieces.push_back(first_part_piece);
-  
-        Piece* new_part_piece = new Piece({true, &addBuffer, addBuffer.length()-1, 1});
+
+        Piece* new_part_piece = new Piece({true, &addBuffer, addBuffer.length()-length_text, length_text});
         new_pieces.push_back(new_part_piece);
-  
-        ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::SPLIT, new_pieces.size()-1, cursor_col, new_part_piece, piece, nullptr};
-        undo_stack.push_back(new_action);
-  
+
         Piece* last_part_piece = new Piece({piece->fromAddBuffer, piece->buffer, piece->start+local_offset, piece->length-local_offset});
         new_pieces.push_back(last_part_piece);
-  
+
+        // registry action into undo stack
+        ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::SPLIT, new_pieces.size(), cursor_col, new_part_piece, piece, nullptr};
+        undo_stack.push_back(new_action);
       }
-      // * case 2: increase length one piece
+      // case 2: increase length of the piece
       else if (offset+piece->length == position_to_insert) {
         std::string substring = piece->buffer->substr(piece->start, piece->length);
-  
-        // insert new piece if the cursor was moved or the piece to increase is not from the addBuffer
+
+        // insert new piece in it meets some rules
         if (insert_new_piece || !piece->fromAddBuffer || substring.compare("\n") == 0) {
           new_pieces.push_back(piece);
-          Piece* new_piece = new Piece({true, &addBuffer, addBuffer.length()-1, 1});
+          Piece* new_piece = new Piece({true, &addBuffer, addBuffer.length()-length_text, length_text});
           new_pieces.push_back(new_piece);
-          
+
+          // registry action into undo stack
           ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::INSERT, new_pieces.size()-1, cursor_col, new_piece, nullptr, nullptr};
           undo_stack.push_back(new_action);
         }
@@ -58,12 +61,14 @@ void PieceTable::updatePieces(const char char_to_insert, size_t position_to_inse
           new_pieces.push_back(piece);
         }
       }
+      // case 3: just add the piece as same as before
       else {
         new_pieces.push_back(piece);
       }
       offset += piece->length;
     }
-  
+
+    pieces.clear();
     pieces = std::move(new_pieces);
   }
 }
@@ -110,7 +115,7 @@ void PieceTable::deleteChar(size_t position_to_delete, size_t cursor_col) {
   pieces = std::move(new_pieces);
 }
 
-void PieceTable::deleteFromSelection() {
+void PieceTable::deleteFromSelection() { // TODO: add this deletion to the undo stack
   int anchor_point_pos_in_buffer = findNewCursorPos(0, text_selected.anchor_point.x, text_selected.anchor_point.y).first;
   int active_point_pos_in_buffer = findNewCursorPos(0, text_selected.active_point.x, text_selected.active_point.y).first;
 
@@ -544,12 +549,34 @@ void PieceTable::selectText(Cursor& cursor, std::string direction) {
   }
 }
 
-void PieceTable::unselectText(Cursor& cursor) {
-  // cursor.current_col = text_selected.anchor_point.x;
-  // cursor.current_row = text_selected.anchor_point.y;
-  // cursor.current_pos = findNewCursorPos(0, cursor.current_col, cursor.current_row).first;
+void PieceTable::unselectText(Cursor& cursor) { 
+  cursor.current_col = text_selected.active_point.x;
+  cursor.current_row = text_selected.active_point.y;
+  cursor.current_pos = findNewCursorPos(0, cursor.current_col, cursor.current_row).first;
   
   text_selected.selected = false;
+}
+
+void PieceTable::copy(Cursor& cursor) { // TODO
+  std::cout << "Copy function" << std::endl;
+}
+
+void PieceTable::paste(Cursor& cursor) { // TODO
+  if (GetClipboardText()) {
+    std::string text_to_paste = GetClipboardText();
+    size_t length_text_to_paste = text_to_paste.length();
+    
+    if (text_selected.selected) {
+      deleteFromSelection();
+      unselectText(cursor);
+      updateRowSize(0, cursor.current_row, cursor.current_col);
+    }
+    updatePieces(text_to_paste, cursor.current_pos, true, cursor.current_col);
+    cursor.current_pos += length_text_to_paste;
+    cursor.current_col += length_text_to_paste;
+    cursor.cursor_moved = true;
+    updateRowSize(0, cursor.current_row, cursor.current_col);
+  }
 }
 
 void PieceTable::freeMemory() {

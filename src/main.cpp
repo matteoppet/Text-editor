@@ -55,13 +55,11 @@ void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) 
     if (text_area.text_selected.selected) {
       text_area.deleteFromSelection();
       cursor.cursor_moved = true;
-      cursor.current_col = text_area.text_selected.active_point.x;
-      cursor.current_row = text_area.text_selected.active_point.y;
-      text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
-      cursor.current_pos = text_area.findNewCursorPos(0, cursor.current_col, cursor.current_row).first;
       text_area.unselectText(cursor);
+      text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
     }
-    text_area.updatePieces(pressed_char, cursor.current_pos, cursor.cursor_moved, cursor.current_col);
+    std::string temp_string(1, pressed_char);
+    text_area.updatePieces(temp_string, cursor.current_pos, cursor.cursor_moved, cursor.current_col);
     cursor.current_col++;
     cursor.current_pos++;
     text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
@@ -113,12 +111,9 @@ void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) 
     else if (keys == KEY_BACKSPACE && cursor.current_col >= 0) {
       if (text_area.text_selected.selected) {
         text_area.deleteFromSelection();
-        text_area.unselectText(cursor);
         cursor.cursor_moved = true;
-        cursor.current_col = text_area.text_selected.active_point.x;
-        cursor.current_row = text_area.text_selected.active_point.y;
+        text_area.unselectText(cursor);
         text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
-        cursor.current_pos = text_area.findNewCursorPos(0, cursor.current_col, cursor.current_row).first;
       } else {
         cursor.current_col -= 1;
         cursor.current_pos -= 1;
@@ -133,6 +128,12 @@ void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) 
       cursor.current_row += 1;
       cursor.current_pos += 1;
       text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
+    }
+    else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_C)) {
+      text_area.copy(cursor);
+    }
+    else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_V)) {
+      text_area.paste(cursor);
     }
   }
 }

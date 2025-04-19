@@ -14,6 +14,8 @@ class Utils {
     Rectangle save_as_file_button = {40, 0, 40, 20};
     Rectangle undo_button = {95, 0, 40, 20};
     Rectangle redo_button = {135, 0, 40, 20};
+    Rectangle copy_button = {175, 0, 40, 20};
+    Rectangle paste_button = {215, 0, 40, 20};
 
     Font font_text_tool_panel;
 

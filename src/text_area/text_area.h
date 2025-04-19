@@ -90,7 +90,8 @@ class PieceTable {
     TextSelectedInfo text_selected;
 
     void updateOriginalBuffer(const std::string& text);
-    void updatePieces(const char char_to_insert, size_t position_to_insert, bool insert_new_piece, size_t cursor_col);
+    //void updatePieces(const char char_to_insert, size_t position_to_insert, bool insert_new_piece, size_t cursor_col);
+    void updatePieces(std::string char_to_insert, size_t position_to_insert, bool insert_new_piece, size_t cursor_col);
     void deleteChar(size_t position_to_delete, size_t cursor_col);
     void deleteFromSelection();
     void insertNewRow(size_t cursor_pos);
@@ -111,6 +112,9 @@ class PieceTable {
 
     void selectText(Cursor& cursor, std::string direction);
     void unselectText(Cursor& cursor);
+
+    void copy(Cursor& cursor);
+    void paste(Cursor& cursor);
 
     void freeMemory();
 };

@@ -43,6 +43,12 @@ void Utils::handleInteractions(PieceTable& text_storage, Cursor& cursor) {
     else if (mouse_x > redo_button.x && mouse_x < redo_button.x+redo_button.width && mouse_y > redo_button.y && mouse_y < redo_button.y+redo_button.height) {
       text_storage.redo(cursor);
     }
+    else if (mouse_x > copy_button.x && mouse_x < copy_button.x+copy_button.width && mouse_y > copy_button.y && mouse_y < copy_button.y+copy_button.height) {
+      text_storage.copy(cursor);
+    }
+    else if (mouse_x > paste_button.x && mouse_x < paste_button.x+paste_button.width && mouse_y > paste_button.y && mouse_y < paste_button.y+paste_button.height) {
+      text_storage.paste(cursor);
+    }
   }
 }
 
@@ -61,6 +67,12 @@ void Utils::renderToolPanel() {
 
   DrawRectangle(redo_button.x, redo_button.y, redo_button.width, redo_button.height, GRAY);
   DrawTextEx(font_text_tool_panel, "Redo", {redo_button.x+3, redo_button.y+3}, 14, 0, BLACK);
+
+  DrawRectangle(copy_button.x, copy_button.y, copy_button.width, copy_button.height, GRAY);
+  DrawTextEx(font_text_tool_panel, "Copy", {copy_button.x+3, copy_button.y+3}, 14, 0, BLACK);
+
+  DrawRectangle(paste_button.x, paste_button.y, paste_button.width, paste_button.height, GRAY);
+  DrawTextEx(font_text_tool_panel, "Paste", {paste_button.x+3, paste_button.y+3}, 14, 0, BLACK);
 
 }
 
