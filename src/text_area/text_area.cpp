@@ -215,12 +215,11 @@ void PieceTable::insertNewRow(size_t cursor_pos) {
 }
 
 void PieceTable::render(Cursor& cursor) {
-  float start_x = 5;
-  float start_y = 25;
+  float start_x = 25;
+  float start_y = 30;
   float length_current_word = 0;
   FontClass& instance_font_class = FontClass::getInstance();
-
-  cursor.render(start_x, start_y);
+  size_t count = 0;
 
   if (text_selected.selected) {
     /* 
@@ -300,13 +299,23 @@ void PieceTable::render(Cursor& cursor) {
     }
   }
 
+  cursor.render(start_x, start_y);
+
+  // draw background count lines
+  DrawRectangle(0, 30, 20, (float)GetScreenHeight(), RAYWHITE),
+
   // draw pieces
+  DrawTextEx(instance_font_class.FONT_TYPE, TextFormat("%d", count), Vector2{5, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
   for (const auto& piece : pieces) {
     std::string substring = piece->buffer->substr(piece->start, piece->length);
 
     if (substring.compare("\n") == 0) {
       start_y += 18;
-      start_x = 5; 
+
+      count++;
+      DrawTextEx(instance_font_class.FONT_TYPE, TextFormat("%d", count), Vector2{5, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
+
+      start_x = 25; 
     } else {
       length_current_word = instance_font_class.measure_size_char(substring[0]).x*substring.length();
       DrawTextEx(instance_font_class.FONT_TYPE, substring.c_str(), {start_x, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
@@ -557,7 +566,7 @@ void PieceTable::unselectText(Cursor& cursor) {
   text_selected.selected = false;
 }
 
-void PieceTable::copy(Cursor& cursor) { // TODO
+void PieceTable::copy(Cursor& cursor) {
   std::cout << "Copy function" << std::endl;
   int anchor_point_pos_in_buffer = findNewCursorPos(0, text_selected.anchor_point.x, text_selected.anchor_point.y).first;
   int active_point_pos_in_buffer = findNewCursorPos(0, text_selected.active_point.x, text_selected.active_point.y).first;

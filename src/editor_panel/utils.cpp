@@ -1,5 +1,7 @@
 #include "utils.h"
 
+Color BACKGROUND_TOOLBAR = {212, 212, 212};
+
 void Utils::handleInteractions(PieceTable& text_storage, Cursor& cursor) {
   size_t mouse_x = GetMousePosition().x;
   size_t mouse_y = GetMousePosition().y;
@@ -15,65 +17,52 @@ void Utils::handleInteractions(PieceTable& text_storage, Cursor& cursor) {
   }
 
   if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-    // save button
-    if (mouse_x > save_file_button.x && mouse_x < save_file_button.x+save_file_button.width && mouse_y > save_file_button.y && mouse_y < save_file_button.y+save_file_button.height) {      
-      if (path_current_file_saved.empty()) {
-        path_current_file_saved = openFileDialog();
-        if (path_current_file_saved.empty()) { // if the user clicked cancel
-          return;
-        } 
-      }
-      text_storage.saveFile(path_current_file_saved);
-    }
-    // save as button
-    else if (mouse_x > save_as_file_button.x && mouse_x < save_as_file_button.x+save_as_file_button.width && mouse_y > save_as_file_button.y && mouse_y < save_as_file_button.y+save_as_file_button.height) {      
-      path_current_file_saved = openFileDialog();
-      
-      if (path_current_file_saved.empty()) { // if the user clicked cancel
-        return;
-      } 
+    for (auto& button : buttons) {
+      if (mouse_x > button.rect.x && mouse_x < button.rect.x+button.rect.width && mouse_y > button.rect.y && mouse_y < button.rect.y+button.rect.height) {
+        if (button.name == "save") {
+          if (path_current_file_saved.empty()) {
 
-      text_storage.saveFile(path_current_file_saved);
-    }
-    // undo button
-    else if (mouse_x > undo_button.x && mouse_x < undo_button.x+undo_button.width && mouse_y > undo_button.y && mouse_y < undo_button.y+undo_button.height) {
-      text_storage.undo(cursor);
-    }
-    // redo button
-    else if (mouse_x > redo_button.x && mouse_x < redo_button.x+redo_button.width && mouse_y > redo_button.y && mouse_y < redo_button.y+redo_button.height) {
-      text_storage.redo(cursor);
-    }
-    else if (mouse_x > copy_button.x && mouse_x < copy_button.x+copy_button.width && mouse_y > copy_button.y && mouse_y < copy_button.y+copy_button.height) {
-      text_storage.copy(cursor);
-    }
-    else if (mouse_x > paste_button.x && mouse_x < paste_button.x+paste_button.width && mouse_y > paste_button.y && mouse_y < paste_button.y+paste_button.height) {
-      text_storage.paste(cursor);
+            path_current_file_saved = openFileDialog();
+            if (path_current_file_saved.empty()) { // if the user clicked cancel
+              return;
+            } 
+          }
+
+          text_storage.saveFile(path_current_file_saved);
+        }
+        else if (button.name == "save_as") {
+          path_current_file_saved = openFileDialog();
+
+          if (path_current_file_saved.empty()) { // if the user clicked cancel
+            return;
+          } 
+    
+          text_storage.saveFile(path_current_file_saved);
+        }
+        else if (button.name == "undo") {
+          text_storage.undo(cursor);
+        }
+        else if (button.name == "redo") {
+          text_storage.redo(cursor);
+        }
+        else if (button.name == "copy") {
+          text_storage.copy(cursor);
+        }
+        else if (button.name == "paste") {
+          text_storage.paste(cursor);
+        }
+      }
     }
   }
 }
 
 void Utils::renderToolPanel() {
-  // BACKGROUND tool panel
-  DrawRectangle(0, 0, GetScreenWidth(), 20, GRAY);
+  DrawRectangle(0, 0, GetScreenWidth(), 27, RAYWHITE);
+  DrawRectangle(0, 4, GetScreenWidth(), 21, WHITE);
 
-  DrawRectangle(save_file_button.x, save_file_button.y, save_file_button.width, save_file_button.height, GRAY);
-  DrawTextEx(font_text_tool_panel, "Save", {save_file_button.x+3, save_file_button.y+3}, 14, 0, BLACK);
-  
-  DrawRectangle(save_as_file_button.x, save_as_file_button.y, save_as_file_button.width, save_as_file_button.height, GRAY);
-  DrawTextEx(font_text_tool_panel, "Save as", {save_as_file_button.x+3, save_as_file_button.y+3}, 14, 0, BLACK);
-
-  DrawRectangle(undo_button.x, undo_button.y, undo_button.width, undo_button.height, GRAY);
-  DrawTextEx(font_text_tool_panel, "Undo", {undo_button.x+3, undo_button.y+3}, 14, 0, BLACK);
-
-  DrawRectangle(redo_button.x, redo_button.y, redo_button.width, redo_button.height, GRAY);
-  DrawTextEx(font_text_tool_panel, "Redo", {redo_button.x+3, redo_button.y+3}, 14, 0, BLACK);
-
-  DrawRectangle(copy_button.x, copy_button.y, copy_button.width, copy_button.height, GRAY);
-  DrawTextEx(font_text_tool_panel, "Copy", {copy_button.x+3, copy_button.y+3}, 14, 0, BLACK);
-
-  DrawRectangle(paste_button.x, paste_button.y, paste_button.width, paste_button.height, GRAY);
-  DrawTextEx(font_text_tool_panel, "Paste", {paste_button.x+3, paste_button.y+3}, 14, 0, BLACK);
-
+  for (auto& button : buttons) {
+    DrawTexture(button.texture, button.rect.x, button.rect.y, WHITE);
+  }
 }
 
 std::string Utils::openFileDialog() {
@@ -83,5 +72,24 @@ std::string Utils::openFileDialog() {
     return file;
   } else {
     return "";
+  }
+}
+
+void Utils::InitToolbar() {
+  float start_x = 0;
+  float start_y = 5;
+
+  for (size_t i=0; i<functionalities.size(); i++) {
+    std::string name_functionality = functionalities[i];
+    std::string path_to_load = "assets/icons/" + name_functionality + ".png";
+
+    Button new_functionality;
+    new_functionality.name = name_functionality;
+    new_functionality.texture = LoadTexture(path_to_load.c_str());
+    new_functionality.rect = {start_x, start_y, 22.0f, 20.0f};
+
+    buttons.push_back(new_functionality);
+
+    start_x += new_functionality.rect.width;
   }
 }

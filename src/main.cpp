@@ -27,7 +27,7 @@ void runMainLoop() {
     editor_panel.handleInteractions(text_area, cursor);
    
     BeginDrawing();
-      ClearBackground(RAYWHITE);
+      ClearBackground(WHITE);
       text_area.render(cursor);
       editor_panel.renderToolPanel();
     EndDrawing();
@@ -108,19 +108,29 @@ void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) 
         if (text_area.text_selected.selected) text_area.unselectText(cursor);
       }
     }
-    else if (keys == KEY_BACKSPACE && cursor.current_col >= 0) {
+    else if (keys == KEY_BACKSPACE) {
       if (text_area.text_selected.selected) {
         text_area.deleteFromSelection();
         cursor.cursor_moved = true;
         text_area.unselectText(cursor);
         text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
       } else {
-        cursor.current_col -= 1;
-        cursor.current_pos -= 1;
-        cursor.cursor_moved = true;
-        text_area.deleteChar(cursor.current_pos, cursor.current_col);
-        text_area.updateRowSize(-1, cursor.current_row, cursor.current_col);
-      }
+        if (cursor.current_col == 0 && cursor.current_row == 0) {
+          
+        } else {
+          if (cursor.current_col == 0) {
+            cursor.current_pos -= 1;
+            cursor.current_row -= 1;
+            cursor.current_col = text_area.getRowSize(cursor.current_row);
+          } else {
+            cursor.current_col -= 1;
+            cursor.current_pos -= 1;
+          }
+          cursor.cursor_moved = true;
+          text_area.deleteChar(cursor.current_pos, cursor.current_col);
+          text_area.updateRowSize(-1, cursor.current_row, cursor.current_col);
+        }
+        }
     }
     else if (keys == KEY_ENTER) {
       text_area.insertNewRow(cursor.current_pos);
@@ -134,6 +144,12 @@ void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) 
     }
     else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_V)) {
       text_area.paste(cursor);
+    }
+    else if (IsKeyDown(KEY_TAB)) {
+      text_area.updatePieces("    ", cursor.current_pos, cursor.cursor_moved, cursor.current_col);
+      cursor.current_pos += 4;
+      cursor.current_col += 4;
+      text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
     }
   }
 }

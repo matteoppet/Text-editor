@@ -8,25 +8,28 @@
 
 enum class EditorStates {OPEN, SAVE, WRITING};
 
+struct Button {
+  std::string name;
+  Texture2D texture;
+  Rectangle rect;
+};
+
 class Utils {
   private:
-    Rectangle save_file_button = {0, 0, 40, 20};
-    Rectangle save_as_file_button = {40, 0, 40, 20};
-    Rectangle undo_button = {95, 0, 40, 20};
-    Rectangle redo_button = {135, 0, 40, 20};
-    Rectangle copy_button = {175, 0, 40, 20};
-    Rectangle paste_button = {215, 0, 40, 20};
+    std::vector<std::string> functionalities = {"save", "save_as", "undo", "redo", "copy", "paste"};
+    std::vector<Button> buttons;
 
     Font font_text_tool_panel;
-
     std::string path_current_file_saved;
-
   public:
     Utils() {
       font_text_tool_panel = LoadFont("assets/font/arial.ttf");
       SetTextureFilter(font_text_tool_panel.texture, TEXTURE_FILTER_BILINEAR);
-    }
 
+      InitToolbar();
+    }
+    
+    void InitToolbar();
     void handleInteractions(PieceTable& text_storage, Cursor& cursor);
     void renderToolPanel();
     std::string openFileDialog();
