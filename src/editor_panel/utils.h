@@ -32,5 +32,6 @@ class Utils {
     void InitToolbar();
     void handleInteractions(PieceTable& text_storage, Cursor& cursor);
     void renderToolPanel();
+
     std::string openFileDialog();
 };

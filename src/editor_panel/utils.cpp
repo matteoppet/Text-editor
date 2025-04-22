@@ -65,16 +65,6 @@ void Utils::renderToolPanel() {
   }
 }
 
-std::string Utils::openFileDialog() {
-  const char *file = tinyfd_openFileDialog("Open File", "", 0, NULL, NULL, 0);
-
-  if (file) {
-    return file;
-  } else {
-    return "";
-  }
-}
-
 void Utils::InitToolbar() {
   float start_x = 0;
   float start_y = 5;
@@ -91,5 +81,15 @@ void Utils::InitToolbar() {
     buttons.push_back(new_functionality);
 
     start_x += new_functionality.rect.width;
+  }
+}
+
+std::string Utils::openFileDialog() {
+  const char *file = tinyfd_saveFileDialog("Select File", "", 0, NULL, NULL);
+
+  if (file) {
+    return file;
+  } else {
+    return "";
   }
 }

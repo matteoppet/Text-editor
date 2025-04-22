@@ -25,7 +25,7 @@ void runMainLoop() {
     handleKeyboard(cursor, editor_panel, text_area);
 
     editor_panel.handleInteractions(text_area, cursor);
-   
+
     BeginDrawing();
       ClearBackground(WHITE);
       text_area.render(cursor);
@@ -58,6 +58,7 @@ void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) 
       text_area.unselectText(cursor);
       text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
     }
+
     std::string temp_string(1, pressed_char);
     text_area.updatePieces(temp_string, cursor.current_pos, cursor.cursor_moved, cursor.current_col);
     cursor.current_col++;
@@ -133,11 +134,12 @@ void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) 
         }
     }
     else if (keys == KEY_ENTER) {
-      text_area.insertNewRow(cursor.current_pos);
+      cursor.cursor_moved = true;
+      text_area.updatePieces("\n", cursor.current_pos, cursor.cursor_moved, cursor.current_col);
       cursor.current_col = 0;
       cursor.current_row += 1;
       cursor.current_pos += 1;
-      text_area.updateRowSize(0, cursor.current_row, cursor.current_col);
+      text_area.updateRowSize(1, cursor.current_row, cursor.current_col);
     }
     else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_C)) {
       text_area.copy(cursor);

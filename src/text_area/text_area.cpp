@@ -52,7 +52,7 @@ void PieceTable::updatePieces(std::string text_to_insert, size_t position_to_ins
           Piece* new_piece = new Piece({true, &addBuffer, addBuffer.length()-length_text, length_text});
           new_pieces.push_back(new_piece);
 
-          // registry action into undo stack
+            // registry action into undo stack
           ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::INSERT, new_pieces.size()-1, cursor_col, new_piece, nullptr, nullptr};
           undo_stack.push_back(new_action);
         }
@@ -172,55 +172,23 @@ void PieceTable::deleteFromSelection() { // TODO: add this deletion to the undo 
   pieces = std::move(new_pieces);
 }
 
-void PieceTable::insertNewRow(size_t cursor_pos) {
-  addBuffer += "\n";
-  size_t offset = 0;
-  bool inserted = false;
-  std::vector<Piece*> new_pieces;
-
-  for (auto piece : pieces) {
-    if (offset < cursor_pos && offset+piece->length > cursor_pos && !inserted) {
-      size_t local_offset = cursor_pos-offset;
-      
-      Piece* first_part_piece = new Piece({piece->fromAddBuffer, &addBuffer, piece->start, local_offset});
-      new_pieces.push_back(first_part_piece);
-
-      Piece* new_part_piece = new Piece({true, &addBuffer, addBuffer.length()-1, 1});
-      new_pieces.push_back(new_part_piece);
-
-      Piece* last_part_piece = new Piece({piece->fromAddBuffer, &addBuffer, piece->start+local_offset, piece->length-local_offset});
-      new_pieces.push_back(last_part_piece);
-
-      inserted = true;
-    } else if (cursor_pos-1 == offset && !inserted) {
-      Piece * new_piece = new Piece({true, &addBuffer, addBuffer.length()-1, 1});
-      new_pieces.push_back(new_piece),
-      new_pieces.push_back(piece);
-
-      inserted = true;
-    }
-    else if (cursor_pos == offset+piece->length && !inserted) {
-
-      new_pieces.push_back(piece);
-      Piece * new_piece = new Piece({true, &addBuffer, addBuffer.length()-1, 1});
-      new_pieces.push_back(new_piece);
-    }
-    else {
-      new_pieces.push_back(piece);
-    }
-    offset += piece->length;
-  }
-
-  pieces= std::move(new_pieces);
-}
-
 void PieceTable::render(Cursor& cursor) {
-  float start_x = 25;
+  float start_x = 30;
   float start_y = 30;
   float length_current_word = 0;
   FontClass& instance_font_class = FontClass::getInstance();
   size_t count = 0;
 
+  // mouse scroll text
+  float mouse_wheel_movements = GetMouseWheelMove(); // -1 down, 1 up
+  if (mouse_wheel_movements != 0) {
+    mouse_scroll_new_position -=  (int)(GetMouseWheelMove()*mouse_scroll_speed);
+
+    if (mouse_scroll_new_position < 0) mouse_scroll_new_position = 0;
+  }
+  start_y -= mouse_scroll_new_position;
+
+  // render background text selected
   if (text_selected.selected) {
     /* 
       active point col < anchor point = rectangle from active point to anchor point
@@ -315,7 +283,7 @@ void PieceTable::render(Cursor& cursor) {
       count++;
       DrawTextEx(instance_font_class.FONT_TYPE, TextFormat("%d", count), Vector2{5, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
 
-      start_x = 25; 
+      start_x = 30; 
     } else {
       length_current_word = instance_font_class.measure_size_char(substring[0]).x*substring.length();
       DrawTextEx(instance_font_class.FONT_TYPE, substring.c_str(), {start_x, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
@@ -448,7 +416,7 @@ void PieceTable::undo(Cursor& cursor) {
     size_t offset_piece = piece_to_undo->index_in_piece;
 
     if (piece_to_undo->type == ActionType::SPLIT) {
-      ActionRecordRedo* new_action = new ActionRecordRedo{ActionType::SPLIT, offset_piece-1, cursor.current_col, {pieces[offset_piece-1], pieces[offset_piece], pieces[offset_piece+1]}, {}, nullptr};
+      ActionRecordRedo* new_action = new ActionRecordRedo{ActionType::SPLIT, offset_piece-1, cursor.current_col, {pieces[offset_piece-1], pieces[offset_piece], pieces[offset_piece+1]}, {}, nullptr, piece_to_undo};
       redo_stack.push_back(new_action);
 
       pieces.erase(pieces.begin()+offset_piece+1);
@@ -468,11 +436,11 @@ void PieceTable::undo(Cursor& cursor) {
         cursor.cursor_moved = true;
         undo_stack.pop_back();
         
-        ActionRecordRedo* new_action = new ActionRecordRedo(ActionType::DELETE, offset_piece, cursor.current_col, {}, {}, piece_to_undo->piece_before_deletion);
+        ActionRecordRedo* new_action = new ActionRecordRedo(ActionType::DELETE, offset_piece, cursor.current_col, {}, {}, piece_to_undo->piece_before_deletion, piece_to_undo);
         redo_stack.push_back(new_action);
 
       } else {
-        ActionRecordRedo* new_action = new ActionRecordRedo(ActionType::DELETE, offset_piece, cursor.current_col, {}, {pieces[offset_piece-1], pieces[offset_piece]}, nullptr);
+        ActionRecordRedo* new_action = new ActionRecordRedo(ActionType::DELETE, offset_piece, cursor.current_col, {}, {pieces[offset_piece-1], pieces[offset_piece]}, nullptr, piece_to_undo);
         redo_stack.push_back(new_action);
         
         pieces.erase(pieces.begin()+offset_piece+1);
@@ -485,7 +453,7 @@ void PieceTable::undo(Cursor& cursor) {
       }
     }
     else if (piece_to_undo->type == ActionType::INSERT) {
-      ActionRecordRedo* new_action = new ActionRecordRedo(ActionType::INSERT, offset_piece, cursor.current_col, {}, {}, nullptr);
+      ActionRecordRedo* new_action = new ActionRecordRedo(ActionType::INSERT, offset_piece, cursor.current_col, {}, {}, nullptr, piece_to_undo);
       new_action->piece_to_insert = pieces[offset_piece];
       redo_stack.push_back(new_action);
 
@@ -502,6 +470,7 @@ void PieceTable::redo(Cursor& cursor) { // TODO: add the piece to the UNDO stack
   if (!redo_stack.empty()) {
     auto piece_to_redo = redo_stack.back();
     size_t offset_piece = piece_to_redo->index_in_piece;
+    undo_stack.push_back(piece_to_redo->undo_action);
 
     if (piece_to_redo->type == ActionType::SPLIT) {
       pieces.erase(pieces.begin()+offset_piece);
