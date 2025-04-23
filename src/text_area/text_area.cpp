@@ -18,6 +18,8 @@ void PieceTable::updatePieces(std::string text_to_insert, size_t position_to_ins
   if (pieces.size() == 0) {
     Piece* new_piece = new Piece({true, &addBuffer, addBuffer.length()-length_text, length_text});
     pieces.push_back(new_piece);
+    ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::INSERT, pieces.size()-1, cursor_col, new_piece, nullptr, nullptr};
+    undo_stack.push_back(new_action);
   } 
   else {
     size_t offset = 0;
@@ -39,7 +41,7 @@ void PieceTable::updatePieces(std::string text_to_insert, size_t position_to_ins
         new_pieces.push_back(last_part_piece);
 
         // registry action into undo stack
-        ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::SPLIT, new_pieces.size(), cursor_col, new_part_piece, piece, nullptr};
+        ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::SPLIT, new_pieces.size()-2, cursor_col, new_part_piece, piece, nullptr};
         undo_stack.push_back(new_action);
       }
       // case 2: increase length of the piece
@@ -52,7 +54,7 @@ void PieceTable::updatePieces(std::string text_to_insert, size_t position_to_ins
           Piece* new_piece = new Piece({true, &addBuffer, addBuffer.length()-length_text, length_text});
           new_pieces.push_back(new_piece);
 
-            // registry action into undo stack
+          // registry action into undo stack
           ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::INSERT, new_pieces.size()-1, cursor_col, new_piece, nullptr, nullptr};
           undo_stack.push_back(new_action);
         }
@@ -63,6 +65,16 @@ void PieceTable::updatePieces(std::string text_to_insert, size_t position_to_ins
       }
       // case 3: just add the piece as same as before
       else {
+        // if the insert position is at 0 and the offset is at 0 insert new piece
+        if (position_to_insert == 0 && offset == 0 && insert_new_piece) {
+          Piece* new_piece = new Piece({true, &addBuffer, addBuffer.length()-length_text, length_text});
+          new_pieces.push_back(new_piece);
+
+          // registry action into undo stack
+          ActionRecordUndo* new_action = new ActionRecordUndo{ActionType::INSERT, new_pieces.size()-1, cursor_col, new_piece, nullptr, nullptr};
+          undo_stack.push_back(new_action);
+        }
+
         new_pieces.push_back(piece);
       }
       offset += piece->length;
@@ -173,7 +185,7 @@ void PieceTable::deleteFromSelection() { // TODO: add this deletion to the undo 
 }
 
 void PieceTable::render(Cursor& cursor) {
-  float start_x = 30;
+  float start_x = 35;
   float start_y = 30;
   float length_current_word = 0;
   FontClass& instance_font_class = FontClass::getInstance();
@@ -270,10 +282,10 @@ void PieceTable::render(Cursor& cursor) {
   cursor.render(start_x, start_y);
 
   // draw background count lines
-  DrawRectangle(0, 30, 20, (float)GetScreenHeight(), RAYWHITE),
+  DrawRectangle(0, 25, 30, (float)GetScreenHeight(), RAYWHITE),
 
   // draw pieces
-  DrawTextEx(instance_font_class.FONT_TYPE, TextFormat("%d", count), Vector2{5, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
+  DrawTextEx(instance_font_class.FONT_TYPE, TextFormat("%d", count), Vector2{5, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, RED);
   for (const auto& piece : pieces) {
     std::string substring = piece->buffer->substr(piece->start, piece->length);
 
@@ -281,9 +293,9 @@ void PieceTable::render(Cursor& cursor) {
       start_y += 18;
 
       count++;
-      DrawTextEx(instance_font_class.FONT_TYPE, TextFormat("%d", count), Vector2{5, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
+      DrawTextEx(instance_font_class.FONT_TYPE, TextFormat("%d", count), Vector2{5, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, RED);
 
-      start_x = 30; 
+      start_x = 35; 
     } else {
       length_current_word = instance_font_class.measure_size_char(substring[0]).x*substring.length();
       DrawTextEx(instance_font_class.FONT_TYPE, substring.c_str(), {start_x, start_y}, instance_font_class.FONT_SIZE, instance_font_class.FONT_SPACING, BLACK);
@@ -414,13 +426,13 @@ void PieceTable::undo(Cursor& cursor) {
   if (!undo_stack.empty()) {
     auto piece_to_undo = undo_stack.back();
     size_t offset_piece = piece_to_undo->index_in_piece;
-
+ 
     if (piece_to_undo->type == ActionType::SPLIT) {
       ActionRecordRedo* new_action = new ActionRecordRedo{ActionType::SPLIT, offset_piece-1, cursor.current_col, {pieces[offset_piece-1], pieces[offset_piece], pieces[offset_piece+1]}, {}, nullptr, piece_to_undo};
       redo_stack.push_back(new_action);
 
       pieces.erase(pieces.begin()+offset_piece+1);
-      pieces.erase(pieces.begin()+offset_piece+1);
+      pieces.erase(pieces.begin()+offset_piece);
       pieces.insert(pieces.begin()+offset_piece, piece_to_undo->piece_before_splitting);
       pieces.erase(pieces.begin()+offset_piece-1);
       

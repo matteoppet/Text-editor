@@ -7,6 +7,13 @@ void Utils::handleInteractions(PieceTable& text_storage, Cursor& cursor) {
   size_t mouse_y = GetMousePosition().y;
 
   if (IsFileDropped()) {
+    if (path_current_file_saved.empty()) {
+      path_current_file_saved = openFileDialog("Save file");
+      if (!path_current_file_saved.empty()) {
+        text_storage.saveFile(path_current_file_saved);
+      }
+    }
+
     FilePathList droppedFiles = LoadDroppedFiles();
     
     if (IsFileExtension(droppedFiles.paths[0], ".txt")) {
@@ -20,9 +27,11 @@ void Utils::handleInteractions(PieceTable& text_storage, Cursor& cursor) {
     for (auto& button : buttons) {
       if (mouse_x > button.rect.x && mouse_x < button.rect.x+button.rect.width && mouse_y > button.rect.y && mouse_y < button.rect.y+button.rect.height) {
         if (button.name == "save") {
-          if (path_current_file_saved.empty()) {
+          std::ifstream fin(path_current_file_saved);
 
-            path_current_file_saved = openFileDialog();
+          if (path_current_file_saved.empty() || !fin) {
+
+            path_current_file_saved = openFileDialog("Save File");
             if (path_current_file_saved.empty()) { // if the user clicked cancel
               return;
             } 
@@ -31,7 +40,7 @@ void Utils::handleInteractions(PieceTable& text_storage, Cursor& cursor) {
           text_storage.saveFile(path_current_file_saved);
         }
         else if (button.name == "save_as") {
-          path_current_file_saved = openFileDialog();
+          path_current_file_saved = openFileDialog("Select file");
 
           if (path_current_file_saved.empty()) { // if the user clicked cancel
             return;
@@ -84,7 +93,7 @@ void Utils::InitToolbar() {
   }
 }
 
-std::string Utils::openFileDialog() {
+std::string Utils::openFileDialog(std::string name_window) {
   const char *file = tinyfd_saveFileDialog("Select File", "", 0, NULL, NULL);
 
   if (file) {

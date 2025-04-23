@@ -89,7 +89,7 @@ class PieceTable {
     std::vector<ActionRecordRedo*> redo_stack;
 
     int mouse_scroll_new_position = 0;
-    int mouse_scroll_speed = 8;
+    int mouse_scroll_speed = 10;
     
   public:
     TextSelectedInfo text_selected;

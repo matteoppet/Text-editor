@@ -5,6 +5,7 @@
 #include "../text_area/cursor.h"
 #include "raylib.h"
 #include "tinyfiledialogs.h"
+#include <fstream>
 
 enum class EditorStates {OPEN, SAVE, WRITING};
 
@@ -33,5 +34,5 @@ class Utils {
     void handleInteractions(PieceTable& text_storage, Cursor& cursor);
     void renderToolPanel();
 
-    std::string openFileDialog();
+    std::string openFileDialog(std::string name_window);
 };
