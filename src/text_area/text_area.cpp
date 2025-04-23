@@ -478,7 +478,7 @@ void PieceTable::undo(Cursor& cursor) {
   }
 }
 
-void PieceTable::redo(Cursor& cursor) { // TODO: add the piece to the UNDO stack 
+void PieceTable::redo(Cursor& cursor) {
   if (!redo_stack.empty()) {
     auto piece_to_redo = redo_stack.back();
     size_t offset_piece = piece_to_redo->index_in_piece;

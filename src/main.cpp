@@ -45,6 +45,9 @@ void initRaylibWindow() {
 
   InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Text Editor");
   SetTargetFPS(60);
+
+  Image icon_image = LoadImage("assets/icons/icon.png");
+  SetWindowIcon(icon_image);
 }
 
 void handleKeyboard(Cursor& cursor, Utils& editor_panel, PieceTable& text_area) {
