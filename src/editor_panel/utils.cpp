@@ -66,11 +66,22 @@ void Utils::handleInteractions(PieceTable& text_storage, Cursor& cursor) {
 }
 
 void Utils::renderToolPanel() {
+  size_t mouse_x = GetMousePosition().x;
+  size_t mouse_y = GetMousePosition().y;
+
   DrawRectangle(0, 0, GetScreenWidth(), 27, RAYWHITE);
   DrawRectangle(0, 4, GetScreenWidth(), 21, WHITE);
 
   for (auto& button : buttons) {
     DrawTexture(button.texture, button.rect.x, button.rect.y, WHITE);
+
+    if (mouse_x > button.rect.x && mouse_x < button.rect.x+button.rect.width && mouse_y > button.rect.y && mouse_y < button.rect.y+button.rect.height) {
+      float size_text = MeasureText(button.name.c_str(), 11);
+      
+      DrawRectangle(button.rect.x+3, button.rect.y+button.rect.height+6, size_text+10, 13, LIGHTGRAY);
+      DrawRectangle(button.rect.x, button.rect.y+button.rect.height+3, size_text+10, 13, RAYWHITE);
+      DrawText(button.name.c_str(), button.rect.x+5, button.rect.y+button.rect.height+3, 11, BLACK);
+    }
   }
 }
 
